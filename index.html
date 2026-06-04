@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Usuarios y Licencias — Municipalidad de Maipú</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f3ef;--surface:#fff;--border:#e2e0d8;--border2:#cccac0;--text:#1a1a18;--muted:#6b6960;--hint:#9e9c93;--accent:#1a5c3a;--accent-l:#e8f2ec;--accent-t:#2d7a52;--blue:#1a4a7a;--blue-l:#e6eff8;--purple:#3c3289;--purple-l:#eeedfe;--orange:#8a4500;--orange-l:#fff3e6;--danger:#c0392b;--danger-l:#fdf0ee;--warn:#8a5a00;--warn-l:#fff8e6;--r:8px;--r-lg:14px;--shadow:0 1px 3px rgba(0,0,0,.07),0 4px 12px rgba(0,0,0,.04)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* LOGIN */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:2.5rem 2rem;width:100%;max-width:400px;box-shadow:var(--shadow)}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:2rem}
+.login-logo-icon{width:40px;height:40px;background:var(--accent);border-radius:var(--r);display:flex;align-items:center;justify-content:center}
+.login-logo-icon svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.login-logo-text{font-size:15px;font-weight:600;line-height:1.2}
+.login-logo-sub{font-size:12px;color:var(--muted)}
+.login-title{font-size:20px;font-weight:600;margin-bottom:.35rem}
+.login-sub{font-size:13px;color:var(--muted);margin-bottom:1.75rem}
+.field{margin-bottom:1rem}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.35rem}
+.field input{width:100%;height:42px;border:1px solid var(--border);border-radius:var(--r);padding:0 12px;font-size:14px;color:var(--text);background:var(--bg);transition:border .15s}
+.field input:focus{outline:none;border-color:var(--accent);background:#fff}
+.btn-login{width:100%;height:44px;background:var(--accent);color:#fff;border:none;border-radius:var(--r);font-size:14px;font-weight:500;transition:background .15s;margin-top:.5rem}
+.btn-login:hover{background:var(--accent-t)}
+.btn-login:disabled{opacity:.6;cursor:not-allowed}
+.login-error{background:var(--danger-l);color:var(--danger);border:1px solid #f5c6c0;border-radius:var(--r);padding:.6rem .9rem;font-size:13px;margin-bottom:1rem;display:none}
+.login-domain{font-size:12px;color:var(--hint);text-align:center;margin-top:1rem}
+
+/* APP */
+#app{display:none;min-height:100vh}
+.sidebar{position:fixed;top:0;left:0;width:220px;height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:50}
+.sidebar-logo{padding:1.25rem 1rem 1rem;border-bottom:1px solid var(--border)}
+.sidebar-logo-row{display:flex;align-items:center;gap:8px}
+.sidebar-logo-icon{width:32px;height:32px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sidebar-logo-icon svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sidebar-logo-name{font-size:12px;font-weight:600;line-height:1.2}
+.sidebar-logo-muni{font-size:11px;color:var(--muted)}
+.sidebar-nav{flex:1;padding:.75rem .5rem;overflow-y:auto}
+.nav-section{font-size:10px;font-weight:600;color:var(--hint);text-transform:uppercase;letter-spacing:.08em;padding:.5rem .6rem .3rem}
+.nav-item{display:flex;align-items:center;gap:9px;padding:.55rem .7rem;border-radius:var(--r);color:var(--muted);font-size:13px;cursor:pointer;transition:all .12s;margin-bottom:1px;border:none;background:none;width:100%;text-align:left;position:relative}
+.nav-item svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.nav-item:hover{background:var(--bg);color:var(--text)}
+.nav-item.active{background:var(--accent-l);color:var(--accent);font-weight:500}
+.nav-badge{position:absolute;right:8px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;min-width:18px;text-align:center}
+.sidebar-footer{padding:.75rem .5rem;border-top:1px solid var(--border)}
+.user-pill{display:flex;align-items:center;gap:8px;padding:.5rem .6rem;border-radius:var(--r)}
+.user-avatar{width:28px;height:28px;border-radius:50%;background:var(--accent-l);color:var(--accent);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.user-info{flex:1;min-width:0}
+.user-name{font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-role{font-size:10px;color:var(--muted)}
+.btn-icon{background:none;border:none;color:var(--hint);padding:4px;border-radius:4px;display:flex;cursor:pointer}
+.btn-icon:hover{color:var(--text);background:var(--bg)}
+.btn-icon svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* MAIN */
+.main{margin-left:220px;min-height:100vh}
+.topbar{height:56px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 1.5rem;gap:1rem;position:sticky;top:0;z-index:40}
+.topbar-title{font-size:15px;font-weight:600;flex:1}
+.topbar-badge{font-size:11px;background:var(--accent-l);color:var(--accent);padding:2px 8px;border-radius:20px;font-weight:500}
+.page{padding:1.5rem;display:none}
+.page.active{display:block}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:1.25rem;margin-bottom:1rem}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:1.25rem}
+.metric{background:var(--bg);border-radius:var(--r);padding:.85rem 1rem}
+.metric-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
+.metric-value{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1}
+.metric-sub{font-size:11px;color:var(--hint);margin-top:2px}
+
+/* SECTION HDR */
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem;flex-wrap:wrap;gap:8px}
+.sec-title{font-size:13px;font-weight:600}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px;border-radius:var(--r);font-size:13px;font-weight:500;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;transition:all .12s}
+.btn:hover{background:var(--bg)}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{background:var(--accent-t)}
+.btn-danger{color:var(--danger);border-color:transparent;background:transparent}
+.btn-danger:hover{background:var(--danger-l)}
+.btn-sm{height:28px;padding:0 10px;font-size:12px}
+.btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* TABLE */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:8px 10px;border-bottom:1px solid var(--border)}
+td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--bg)}
+
+/* BADGES */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+.badge-activo{background:#e8f5e9;color:#2e7d32}
+.badge-inactivo{background:var(--danger-l);color:var(--danger)}
+.badge-pendiente{background:var(--warn-l);color:var(--warn)}
+.badge-admin{background:var(--accent-l);color:var(--accent)}
+.badge-viewer{background:var(--bg);color:var(--muted);border:1px solid var(--border)}
+.badge-office{background:var(--blue-l);color:var(--blue)}
+.badge-adobe{background:var(--orange-l);color:var(--orange)}
+.badge-antivirus{background:#fce4ec;color:#880e4f}
+.badge-otro{background:var(--bg);color:var(--muted);border:1px solid var(--border)}
+
+/* SEARCH ROW */
+.search-row{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap}
+.search-input{height:34px;border:1px solid var(--border);border-radius:var(--r);padding:0 10px;font-size:13px;background:var(--surface);color:var(--text);flex:1;min-width:160px}
+.search-input:focus{outline:none;border-color:var(--accent)}
+.filter-select{height:34px;border:1px solid var(--border);border-radius:var(--r);padding:0 8px;font-size:13px;background:var(--surface);color:var(--text)}
+
+/* PROGRESS */
+.prog{display:flex;align-items:center;gap:7px;min-width:90px}
+.prog-bg{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .3s}
+.prog-lbl{font-size:11px;color:var(--muted);min-width:26px;text-align:right}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:200;align-items:center;justify-content:center;padding:1rem}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);padding:1.5rem;width:100%;max-width:460px;box-shadow:var(--shadow);max-height:90vh;overflow-y:auto}
+.modal-title{font-size:15px;font-weight:600;margin-bottom:1.25rem}
+.form-row{margin-bottom:.9rem}
+.form-row label{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.35rem}
+.form-row input,.form-row select,.form-row textarea{width:100%;border:1px solid var(--border);border-radius:var(--r);padding:0 10px;font-size:13px;color:var(--text);background:var(--bg)}
+.form-row input,.form-row select{height:38px}
+.form-row textarea{padding:8px 10px;resize:vertical;min-height:70px}
+.form-row input:focus,.form-row select:focus,.form-row textarea:focus{outline:none;border-color:var(--accent);background:#fff}
+.form-hint{font-size:11px;color:var(--hint);margin-top:3px}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:1.25rem}
+.modal-err{background:var(--danger-l);color:var(--danger);border-radius:var(--r);padding:.55rem .8rem;font-size:12px;margin-top:.75rem;display:none}
+
+/* TOAST */
+#toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--text);color:#fff;padding:.65rem 1rem;border-radius:var(--r);font-size:13px;opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none;z-index:999;max-width:300px}
+#toast.show{opacity:1;transform:translateY(0)}
+#toast.err{background:var(--danger)}
+
+/* LOADING */
+#loading{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:.75rem}
+.spinner{width:28px;height:28px;border:2.5px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* EMPTY */
+.empty{text-align:center;padding:2.5rem 1rem;color:var(--hint);font-size:13px}
+.empty svg{width:32px;height:32px;stroke:var(--border2);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;display:block;margin:0 auto .75rem}
+
+/* PENDING ALERT */
+.pending-bar{background:var(--warn-l);border:1px solid #f0d080;border-radius:var(--r);padding:.7rem 1rem;display:flex;align-items:center;gap:10px;margin-bottom:1rem;font-size:13px;color:var(--warn)}
+.pending-bar svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
+
+/* FUNCIONARIO DETAIL */
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem}
+.detail-item label{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:2px}
+.detail-item span{font-size:13px;color:var(--text)}
+.license-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500;margin:2px;border:1px solid var(--border)}
+
+/* ONLINE DOT */
+.online-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;flex-shrink:0}
+.divider{height:1px;background:var(--border);margin:1.25rem 0}
+</style>
+</head>
+<body>
+
+<div id="loading"><div class="spinner"></div><span style="font-size:13px;color:var(--muted)">Cargando...</span></div>
+<div id="toast"></div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <div><div class="login-logo-text">Usuarios y Licencias</div><div class="login-logo-sub">Municipalidad de Maipú</div></div>
+    </div>
+    <div class="login-title">Iniciar sesión</div>
+    <div class="login-sub">Ingresa con tu correo municipal</div>
+    <div id="login-error" class="login-error"></div>
+    <div class="field"><label>Correo</label><input type="email" id="login-email" placeholder="usuario@maipu.cl" autocomplete="email"></div>
+    <div class="field"><label>Contraseña</label><input type="password" id="login-pass" placeholder="••••••••"></div>
+    <button class="btn-login" id="login-btn" onclick="doLogin()">Ingresar</button>
+    <div class="login-domain">Solo cuentas @maipu.cl</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-row">
+        <div class="sidebar-logo-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <div><div class="sidebar-logo-name">Usuarios y Licencias</div><div class="sidebar-logo-muni">Maipú</div></div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">General</div>
+      <button class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard
+      </button>
+      <button class="nav-item" data-page="funcionarios" onclick="navigate('funcionarios')">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Funcionarios
+      </button>
+      <button class="nav-item" data-page="licencias" onclick="navigate('licencias')">
+        <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>Software / Licencias
+      </button>
+      <div id="admin-nav" style="display:none">
+        <div class="nav-section" style="margin-top:.5rem">Administración</div>
+        <button class="nav-item" data-page="pools" onclick="navigate('pools')">
+          <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>Pools de licencias
+        </button>
+        <button class="nav-item" data-page="pendientes" onclick="navigate('pendientes')">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Pendientes AD<span class="nav-badge" id="pending-badge" style="display:none">0</span>
+        </button>
+        <button class="nav-item" data-page="direcciones" onclick="navigate('direcciones')">
+          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Direcciones
+        </button>
+        <button class="nav-item" data-page="usuarios" onclick="navigate('usuarios')">
+          <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Usuarios sistema
+        </button>
+        <button class="nav-item" data-page="actividad" onclick="navigate('actividad')">
+          <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Actividad
+        </button>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-pill">
+        <div class="user-avatar" id="user-avatar">??</div>
+        <div class="user-info"><div class="user-name" id="user-name">—</div><div class="user-role" id="user-role">—</div></div>
+        <button class="btn-icon" onclick="openModal('passwd')" title="Cambiar contraseña"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></button>
+        <button class="btn-icon" onclick="doLogout()" title="Cerrar sesión"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <span class="topbar-badge" id="topbar-badge"></span>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="metric-grid" id="dash-metrics"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem" id="dash-grid">
+        <div class="card"><div class="sec-title" style="margin-bottom:.85rem">Software — uso actual</div><div id="dash-software"></div></div>
+        <div class="card"><div class="sec-title" style="margin-bottom:.85rem">Funcionarios por dirección</div><div id="dash-dir"></div></div>
+      </div>
+    </div>
+
+    <!-- FUNCIONARIOS -->
+    <div class="page" id="page-funcionarios">
+      <div id="pending-alert" style="display:none" class="pending-bar">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="pending-alert-text"></span>
+        <button class="btn btn-sm" style="margin-left:auto" onclick="navigate('pendientes')">Ver pendientes</button>
+      </div>
+      <div class="card">
+        <div class="sec-hdr">
+          <div class="sec-title">Funcionarios registrados</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary" id="btn-add-func" onclick="openModal('func')" style="display:none">
+              <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Agregar
+            </button>
+          </div>
+        </div>
+        <div class="search-row">
+          <input class="search-input" id="func-search" placeholder="Buscar nombre, RUT, correo..." oninput="renderFuncionarios()">
+          <select class="filter-select" id="func-dir-filter" onchange="renderFuncionarios()"><option value="">Todas las direcciones</option></select>
+          <select class="filter-select" id="func-estado-filter" onchange="renderFuncionarios()">
+            <option value="">Todos los estados</option>
+            <option value="activo">Activo</option>
+            <option value="inactivo">Inactivo</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nombre</th><th>RUT</th><th>Correo</th><th>Dirección</th><th>Cargo</th><th>Estado</th><th>Licencias</th><th></th></tr></thead>
+            <tbody id="func-tbody"></tbody>
+          </table>
+        </div>
+        <div id="func-empty" class="empty" style="display:none">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          No hay funcionarios registrados
+        </div>
+      </div>
+    </div>
+
+    <!-- SOFTWARE / LICENCIAS -->
+    <div class="page" id="page-licencias">
+      <div class="card">
+        <div class="sec-hdr">
+          <div class="sec-title">Catálogo de software</div>
+          <button class="btn btn-primary" id="btn-add-sw" onclick="openModal('software')" style="display:none">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Agregar software
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Software</th><th>Tipo</th><th>Stock total</th><th>Asignadas</th><th>Disponibles</th><th>Uso</th><th id="sw-actions-col" style="display:none"></th></tr></thead>
+            <tbody id="sw-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="sec-hdr">
+          <div class="sec-title">Asignaciones por dirección</div>
+          <select class="filter-select" id="lic-dir-filter" onchange="renderLicenciasDir()"><option value="">Todas las direcciones</option></select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Dirección</th><th>Software</th><th>Cantidad</th></tr></thead>
+            <tbody id="lic-dir-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- POOLS DE LICENCIAS -->
+    <div class="page" id="page-pools">
+      <div id="pools-container"></div>
+    </div>
+
+    <!-- PENDIENTES AD -->
+    <div class="page" id="page-pendientes">
+      <div class="card">
+        <div class="sec-hdr">
+          <div class="sec-title">Usuarios nuevos desde Active Directory</div>
+        </div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:1rem">Estos usuarios fueron detectados en el AD pero aún no tienen licencias asignadas. Aprueba cada uno para agregarlos al sistema.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nombre</th><th>Usuario AD</th><th>Correo</th><th>Dirección</th><th>Detectado</th><th></th></tr></thead>
+            <tbody id="pend-tbody"></tbody>
+          </table>
+        </div>
+        <div id="pend-empty" class="empty" style="display:none">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          Sin usuarios pendientes — todo al día
+        </div>
+      </div>
+    </div>
+
+    <!-- DIRECCIONES -->
+    <div class="page" id="page-direcciones">
+      <div class="card">
+        <div class="sec-hdr">
+          <div class="sec-title">Direcciones / Unidades</div>
+          <button class="btn btn-primary" onclick="openModal('dir')">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nueva dirección
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nombre</th><th>Código</th><th>OU (AD)</th><th>Funcionarios</th><th>Estado</th><th></th></tr></thead>
+            <tbody id="dir-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- USUARIOS SISTEMA -->
+    <div class="page" id="page-usuarios">
+      <div class="card">
+        <div class="sec-hdr">
+          <div class="sec-title">Usuarios del sistema</div>
+          <button class="btn btn-primary" onclick="openModal('user')">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Crear usuario
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th></th></tr></thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACTIVIDAD -->
+    <div class="page" id="page-actividad">
+      <div class="card" style="margin-bottom:1rem">
+        <div class="sec-hdr"><div class="sec-title">En línea ahora <span id="online-count" style="font-size:12px;font-weight:400;color:var(--muted)"></span></div></div>
+        <table><thead><tr><th>Usuario</th><th>Rol</th><th>Última actividad</th></tr></thead><tbody id="online-tbody"></tbody></table>
+      </div>
+      <div class="card">
+        <div class="sec-hdr">
+          <div class="sec-title">Historial de cambios</div>
+          <div style="display:flex;gap:8px">
+            <input class="search-input" id="log-search" placeholder="Buscar usuario..." oninput="renderLog()" style="width:180px;flex:none">
+            <select class="filter-select" id="log-filter-action" onchange="renderLog()">
+              <option value="">Todas las acciones</option>
+              <option value="LOGIN">Sesiones</option>
+              <option value="FUNC">Funcionarios</option>
+              <option value="LIC">Licencias</option>
+              <option value="USUARIO">Usuarios sistema</option>
+              <option value="PASSWD">Contraseñas</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Detalle</th></tr></thead><tbody id="log-tbody"></tbody></table>
+        </div>
+        <div id="log-empty" class="empty" style="display:none"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Sin registros</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-title"></div>
+    <div id="modal-body"></div>
+    <div id="modal-err" class="modal-err"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" id="modal-save-btn" onclick="modalSave()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+// CONFIG
+// ════════════════════════════════════════════
+const SUPABASE_URL  = 'https://qvputdmmxtjaswgvqmcx.supabase.co';
+const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2cHV0ZG1teHRqYXN3Z3ZxbWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4ODQ1NzIsImV4cCI6MjA5NTQ2MDU3Mn0.KpNX0THAQzFb6t5qO0-L_FXXbG99DC0lO4VweTCZzss';
+const SUPABASE_SRV  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2cHV0ZG1teHRqYXN3Z3ZxbWN4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTg4NDU3MiwiZXhwIjoyMDk1NDYwNTcyfQ.EYTuup6N3FTYR95Jgi5-JEry9DlQILSnETfoX5Igd_s';
+const ALLOWED_DOMAIN = 'maipu.cl';
+
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null, currentProfile = null;
+let funcionarios = [], direcciones = [], softwareList = [], licencias = [];
+let sysUsers = [], auditLog = [], onlineSessions = [];
+let pools = [], poolStock = [];
+let modalMode = '';
+let heartbeatInterval, onlineInterval;
+
+// ════════════════════════════════════════════
+// BOOT
+// ════════════════════════════════════════════
+async function boot() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) await loadProfile(session.user);
+  else showLogin();
+  sb.auth.onAuthStateChange(async (ev, session) => {
+    if (ev === 'SIGNED_IN' && session) await loadProfile(session.user);
+    if (ev === 'SIGNED_OUT') showLogin();
+  });
+}
+
+async function loadProfile(user) {
+  currentUser = user;
+  const { data: p } = await sb.from('profiles').select('*').eq('id', user.id).single();
+  if (!p || !p.active) { await sb.auth.signOut(); showLogin(); return; }
+  currentProfile = p;
+  await loadData();
+  await showApp();
+}
+
+async function loadData() {
+  const [{ data: f }, { data: d }, { data: sw }, { data: l },
+         { data: u }, { data: p }, { data: ps }] = await Promise.all([
+    sb.from('funcionarios').select('*').order('nombre_completo'),
+    sb.from('direcciones').select('*').order('nombre'),
+    sb.from('resumen_software').select('*'),
+    sb.from('licencias').select('*,software(nombre,tipo),funcionarios(nombre_completo,direccion_id)').eq('activa', true),
+    currentProfile.role === 'admin'
+      ? sb.from('profiles').select('*').order('full_name')
+      : Promise.resolve({ data: [] }),
+    sb.from('pools').select('*').order('nombre'),
+    sb.from('resumen_pools').select('*'),
+  ]);
+  funcionarios  = f  || [];
+  direcciones   = d  || [];
+  softwareList  = sw || [];
+  licencias     = l  || [];
+  sysUsers      = u  || [];
+  pools         = p  || [];
+  poolStock     = ps || [];
+}
+
+// ════════════════════════════════════════════
+// AUTH
+// ════════════════════════════════════════════
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim().toLowerCase();
+  const pass  = document.getElementById('login-pass').value;
+  const btn   = document.getElementById('login-btn');
+  document.getElementById('login-error').style.display = 'none';
+  if (!email.endsWith('@' + ALLOWED_DOMAIN)) { showLoginErr('Solo correos @' + ALLOWED_DOMAIN); return; }
+  if (!pass) { showLoginErr('Ingresa tu contraseña.'); return; }
+  btn.disabled = true; btn.textContent = 'Ingresando...';
+  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+  btn.disabled = false; btn.textContent = 'Ingresar';
+  if (error) showLoginErr('Correo o contraseña incorrectos.');
+}
+document.getElementById('login-pass')?.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+function showLoginErr(msg) { const el = document.getElementById('login-error'); el.textContent = msg; el.style.display = 'block'; }
+function showLogin() { document.getElementById('loading').style.display = 'none'; document.getElementById('login-screen').style.display = 'flex'; document.getElementById('app').style.display = 'none'; }
+
+async function doLogout() {
+  clearInterval(heartbeatInterval); clearInterval(onlineInterval);
+  await sb.from('user_sessions').delete().eq('user_id', currentUser.id);
+  await logAudit('LOGOUT', 'session', null, 'Cierre de sesión');
+  await sb.auth.signOut();
+}
+
+async function showApp() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+
+  const initials = (currentProfile.full_name || currentProfile.email).split(' ').slice(0,2).map(s=>s[0]).join('').toUpperCase();
+  document.getElementById('user-avatar').textContent = initials;
+  document.getElementById('user-name').textContent = currentProfile.full_name || currentProfile.email.split('@')[0];
+  document.getElementById('user-role').textContent = currentProfile.role === 'admin' ? 'Administrador' : 'Lectura';
+  document.getElementById('topbar-badge').textContent = currentProfile.role === 'admin' ? 'Admin' : 'Lectura';
+
+  if (currentProfile.role === 'admin') {
+    document.getElementById('admin-nav').style.display = 'block';
+    document.getElementById('btn-add-func').style.display = 'flex';
+    document.getElementById('btn-add-sw').style.display = 'flex';
+    document.getElementById('sw-actions-col').style.display = '';
+  }
+
+  populateDirFilters();
+  navigate('dashboard');
+  startHeartbeat();
+  await logAudit('LOGIN', 'session', null, 'Inicio de sesión');
+  checkPending();
+}
+
+// ════════════════════════════════════════════
+// NAVIGATE
+// ════════════════════════════════════════════
+function navigate(page) {
+  const adminPages = ['pools','pendientes','direcciones','usuarios','actividad'];
+  if (adminPages.includes(page) && currentProfile?.role !== 'admin') page = 'dashboard';
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.page === page));
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-' + page)?.classList.add('active');
+  const titles = { dashboard:'Dashboard', funcionarios:'Funcionarios', licencias:'Software / Licencias', pools:'Pools de licencias', pendientes:'Pendientes AD', direcciones:'Direcciones', usuarios:'Usuarios sistema', actividad:'Actividad' };
+  document.getElementById('topbar-title').textContent = titles[page] || page;
+
+  if (page === 'dashboard')    renderDashboard();
+  if (page === 'funcionarios') renderFuncionarios();
+  if (page === 'licencias')    renderLicencias();
+  if (page === 'pools')        renderPools();
+  if (page === 'pendientes')   renderPendientes();
+  if (page === 'direcciones')  renderDirecciones();
+  if (page === 'usuarios')     renderUsuarios();
+  if (page === 'actividad')    renderActividad();
+}
+
+// ════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════
+function getDireccion(id) { return direcciones.find(d => d.id === id); }
+function pct(u, t) { return t > 0 ? Math.round(u/t*100) : 0; }
+function barColor(p) { return p >= 90 ? '#c0392b' : p >= 70 ? '#d97706' : '#1a5c3a'; }
+
+function populateDirFilters() {
+  const opts = '<option value="">Todas las direcciones</option>' + direcciones.map(d => `<option value="${d.id}">${d.nombre}</option>`).join('');
+  document.getElementById('func-dir-filter').innerHTML = opts;
+  document.getElementById('lic-dir-filter').innerHTML = opts;
+}
+
+function checkPending() {
+  const pend = funcionarios.filter(f => f.estado === 'pendiente');
+  const badge = document.getElementById('pending-badge');
+  const bar = document.getElementById('pending-alert');
+  const alertText = document.getElementById('pending-alert-text');
+  if (pend.length > 0 && currentProfile.role === 'admin') {
+    badge.textContent = pend.length; badge.style.display = 'inline-block';
+    bar.style.display = 'flex';
+    alertText.textContent = `${pend.length} usuario${pend.length>1?'s':''} nuevo${pend.length>1?'s':''} detectado${pend.length>1?'s':''} desde Active Directory. Asígnales sus licencias.`;
+  } else {
+    badge.style.display = 'none'; bar.style.display = 'none';
+  }
+}
+
+// ════════════════════════════════════════════
+// DASHBOARD
+// ════════════════════════════════════════════
+function renderDashboard() {
+  const total = funcionarios.length;
+  const activos = funcionarios.filter(f => f.estado === 'activo').length;
+  const pendientes = funcionarios.filter(f => f.estado === 'pendiente').length;
+  const totalLic = licencias.length;
+
+  document.getElementById('dash-metrics').innerHTML = [
+    { label:'Funcionarios totales', val: total, sub: `${activos} activos` },
+    { label:'Pendientes AD', val: pendientes, sub: 'Sin licencias asignadas' },
+    { label:'Licencias activas', val: totalLic, sub: 'Total asignadas' },
+    { label:'Tipos de software', val: softwareList.length, sub: 'En catálogo' },
+  ].map(m => `<div class="metric"><div class="metric-label">${m.label}</div><div class="metric-value">${m.val}</div><div class="metric-sub">${m.sub}</div></div>`).join('');
+
+  // Software chart
+  document.getElementById('dash-software').innerHTML = softwareList.map(s => {
+    const p = pct(s.asignadas, s.stock_total);
+    return `<div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
+        <span>${s.nombre}</span><span style="color:var(--muted)">${s.asignadas}/${s.stock_total}</span>
+      </div>
+      <div class="prog"><div class="prog-bg" style="flex:1"><div class="prog-fill" style="width:${p}%;background:${barColor(p)}"></div></div><span class="prog-lbl">${p}%</span></div>
+    </div>`;
+  }).join('') || '<div class="empty" style="padding:1rem">Sin software registrado</div>';
+
+  // Por dirección
+  const byDir = {};
+  funcionarios.forEach(f => {
+    const key = getDireccion(f.direccion_id)?.nombre || 'Sin dirección';
+    byDir[key] = (byDir[key] || 0) + 1;
+  });
+  const sorted = Object.entries(byDir).sort((a,b) => b[1]-a[1]).slice(0, 8);
+  const max = sorted[0]?.[1] || 1;
+  document.getElementById('dash-dir').innerHTML = sorted.map(([name, cnt]) =>
+    `<div style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px">${name}</span><span style="color:var(--muted)">${cnt}</span></div>
+      <div class="prog-bg"><div class="prog-fill" style="width:${pct(cnt,max)}%;background:var(--accent)"></div></div>
+    </div>`
+  ).join('') || '<div class="empty" style="padding:1rem">Sin datos</div>';
+}
+
+// ════════════════════════════════════════════
+// FUNCIONARIOS
+// ════════════════════════════════════════════
+function renderFuncionarios() {
+  const search = (document.getElementById('func-search')?.value || '').toLowerCase();
+  const dirF   = document.getElementById('func-dir-filter')?.value || '';
+  const estF   = document.getElementById('func-estado-filter')?.value || '';
+  let rows = [...funcionarios];
+  if (search) rows = rows.filter(f => (f.nombre_completo+f.rut+f.correo).toLowerCase().includes(search));
+  if (dirF)   rows = rows.filter(f => f.direccion_id === dirF);
+  if (estF)   rows = rows.filter(f => f.estado === estF);
+
+  const tbody = document.getElementById('func-tbody');
+  const empty = document.getElementById('func-empty');
+  const isAdmin = currentProfile?.role === 'admin';
+  if (!rows.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  tbody.innerHTML = rows.map(f => {
+    const dir = getDireccion(f.direccion_id)?.nombre || '—';
+    const lics = licencias.filter(l => l.funcionario_id === f.id);
+    const chips = lics.map(l => `<span class="badge badge-${l.software?.tipo||'otro'}" style="font-size:10px">${l.software?.nombre||'?'}</span>`).join(' ');
+    return `<tr onclick="openFuncionario('${f.id}')" style="cursor:pointer">
+      <td><strong>${f.nombre_completo}</strong>${f.ad_username ? `<div style="font-size:10px;color:var(--hint)">${f.ad_username}</div>` : ''}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:12px">${f.rut || '—'}</td>
+      <td style="font-size:12px">${f.correo || '—'}</td>
+      <td style="font-size:12px">${dir}</td>
+      <td style="font-size:12px">${f.cargo || '—'}</td>
+      <td><span class="badge badge-${f.estado}">${f.estado}</span></td>
+      <td>${chips || '<span style="font-size:11px;color:var(--hint)">Sin licencias</span>'}</td>
+      <td>${isAdmin ? `<button class="btn btn-sm" onclick="event.stopPropagation();openModal('asignar-lic','${f.id}')"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Licencia</button>` : ''}</td>
+    </tr>`;
+  }).join('');
+}
+
+function openFuncionario(id) {
+  const f = funcionarios.find(x => x.id === id);
+  if (!f) return;
+  const dir = getDireccion(f.direccion_id)?.nombre || '—';
+  const lics = licencias.filter(l => l.funcionario_id === id);
+  const isAdmin = currentProfile?.role === 'admin';
+
+  document.getElementById('modal-title').textContent = f.nombre_completo;
+  document.getElementById('modal-err').style.display = 'none';
+  document.getElementById('modal-save-btn').style.display = 'none';
+
+  document.getElementById('modal-body').innerHTML = `
+    <div class="detail-grid">
+      <div class="detail-item"><label>RUT</label><span>${f.rut || '—'}</span></div>
+      <div class="detail-item"><label>Correo</label><span>${f.correo || '—'}</span></div>
+      <div class="detail-item"><label>Dirección</label><span>${dir}</span></div>
+      <div class="detail-item"><label>Cargo</label><span>${f.cargo || '—'}</span></div>
+      <div class="detail-item"><label>Estado</label><span class="badge badge-${f.estado}">${f.estado}</span></div>
+      <div class="detail-item"><label>Usuario AD</label><span style="font-family:'DM Mono',monospace;font-size:12px">${f.ad_username || '—'}</span></div>
+    </div>
+    <div class="divider"></div>
+    <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.5rem">Licencias asignadas</div>
+    <div id="lic-chips-detail">
+      ${lics.length ? lics.map(l => `
+        <span class="license-chip badge-${l.software?.tipo||'otro'}">
+          ${l.software?.nombre||'?'}
+          ${isAdmin ? `<button onclick="revocarLicencia('${l.id}')" style="background:none;border:none;cursor:pointer;color:inherit;font-size:13px;line-height:1;padding:0 2px" title="Revocar">×</button>` : ''}
+        </span>`).join('') : '<span style="font-size:12px;color:var(--hint)">Sin licencias asignadas</span>'}
+    </div>
+    ${isAdmin ? `<button class="btn btn-primary btn-sm" style="margin-top:.75rem" onclick="closeModal();openModal('asignar-lic','${f.id}')"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Agregar licencia</button>` : ''}
+    ${isAdmin ? `<button class="btn btn-sm" style="margin-top:.5rem;margin-left:6px" onclick="closeModal();openModal('edit-func','${f.id}')"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Editar</button>` : ''}`;
+
+  document.getElementById('modal').classList.add('open');
+  modalMode = 'view';
+}
+
+// ════════════════════════════════════════════
+// SOFTWARE / LICENCIAS
+// ════════════════════════════════════════════
+function renderLicencias() {
+  const isAdmin = currentProfile?.role === 'admin';
+  document.getElementById('sw-tbody').innerHTML = softwareList.map(s => {
+    const p = pct(s.asignadas, s.stock_total);
+    return `<tr>
+      <td><strong>${s.nombre}</strong></td>
+      <td><span class="badge badge-${s.tipo}">${s.tipo}</span></td>
+      <td>${s.stock_total}</td>
+      <td>${s.asignadas}</td>
+      <td><strong style="color:${s.disponibles===0&&s.stock_total>0?'var(--danger)':'var(--accent)'}">${s.disponibles}</strong></td>
+      <td><div class="prog"><div class="prog-bg"><div class="prog-fill" style="width:${p}%;background:${barColor(p)}"></div></div><span class="prog-lbl">${p}%</span></div></td>
+      <td>${isAdmin ? `<button class="btn btn-sm" onclick="openModal('add-stock','${s.id}')">+ Stock</button>` : ''}</td>
+    </tr>`;
+  }).join('');
+
+  renderLicenciasDir();
+}
+
+function renderLicenciasDir() {
+  const dirF = document.getElementById('lic-dir-filter')?.value || '';
+  const byDir = {};
+  licencias.forEach(l => {
+    const dirId = l.funcionarios?.direccion_id;
+    const dirNom = getDireccion(dirId)?.nombre || 'Sin dirección';
+    const swNom = l.software?.nombre || '?';
+    const key = dirNom + '||' + swNom;
+    byDir[key] = (byDir[key] || 0) + 1;
+  });
+
+  let rows = Object.entries(byDir).map(([k, cnt]) => {
+    const [dir, sw] = k.split('||');
+    return { dir, sw, cnt, dirId: direcciones.find(d => d.nombre === dir)?.id };
+  });
+  if (dirF) rows = rows.filter(r => r.dirId === dirF);
+  rows.sort((a,b) => a.dir.localeCompare(b.dir));
+
+  document.getElementById('lic-dir-tbody').innerHTML = rows.map(r =>
+    `<tr><td>${r.dir}</td><td>${r.sw}</td><td>${r.cnt}</td></tr>`
+  ).join('') || '<tr><td colspan="3" style="text-align:center;color:var(--hint);padding:1rem">Sin datos</td></tr>';
+}
+
+// ════════════════════════════════════════════
+// PENDIENTES AD
+// ════════════════════════════════════════════
+function renderPendientes() {
+  const rows = funcionarios.filter(f => f.estado === 'pendiente');
+  const tbody = document.getElementById('pend-tbody');
+  const empty = document.getElementById('pend-empty');
+  if (!rows.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = rows.map(f => {
+    const dir = getDireccion(f.direccion_id)?.nombre || '—';
+    const dt = f.created_at ? new Date(f.created_at).toLocaleDateString('es-CL') : '—';
+    return `<tr>
+      <td><strong>${f.nombre_completo}</strong></td>
+      <td style="font-family:'DM Mono',monospace;font-size:12px">${f.ad_username || '—'}</td>
+      <td style="font-size:12px">${f.correo || '—'}</td>
+      <td>${dir}</td>
+      <td style="font-size:12px;color:var(--muted)">${dt}</td>
+      <td><button class="btn btn-primary btn-sm" onclick="openModal('aprobar','${f.id}')">Asignar licencias</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════
+// DIRECCIONES
+// ════════════════════════════════════════════
+function renderDirecciones() {
+  document.getElementById('dir-tbody').innerHTML = direcciones.map(d => {
+    const cnt = funcionarios.filter(f => f.direccion_id === d.id).length;
+    return `<tr>
+      <td><strong>${d.nombre}</strong></td>
+      <td style="font-family:'DM Mono',monospace;font-size:12px">${d.codigo || '—'}</td>
+      <td style="font-size:11px;color:var(--muted)">${d.ou_dn || '—'}</td>
+      <td>${cnt}</td>
+      <td><span class="badge ${d.activa ? 'badge-activo' : 'badge-inactivo'}">${d.activa ? 'Activa' : 'Inactiva'}</span></td>
+      <td><button class="btn btn-sm" onclick="openModal('edit-dir','${d.id}')">Editar</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════
+// USUARIOS SISTEMA
+// ════════════════════════════════════════════
+function renderUsuarios() {
+  const tbody = document.getElementById('users-tbody');
+  if (!sysUsers.length) { tbody.innerHTML = ''; return; }
+  tbody.innerHTML = sysUsers.map(u => {
+    const isSelf = u.id === currentProfile.id;
+    return `<tr>
+      <td>${u.full_name || '—'}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:12px">${u.email}</td>
+      <td><span class="badge badge-${u.role==='admin'?'admin':'viewer'}">${u.role === 'admin' ? 'Admin' : 'Solo lectura'}</span></td>
+      <td><span class="badge ${u.active ? 'badge-activo' : 'badge-inactivo'}">${u.active ? 'Activo' : 'Inactivo'}</span></td>
+      <td>${!isSelf ? `<button class="btn btn-sm" onclick="toggleUserActive('${u.id}',${u.active})">${u.active ? 'Desactivar' : 'Activar'}</button>` : '<span style="font-size:11px;color:var(--hint)">Tú</span>'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════
+// ACTIVIDAD
+// ════════════════════════════════════════════
+async function renderActividad() {
+  const cutoff = new Date(Date.now() - 5*60*1000).toISOString();
+  const [{ data: s }, { data: l }] = await Promise.all([
+    sb.from('user_sessions').select('*').gte('last_seen', cutoff).order('last_seen', { ascending: false }),
+    sb.from('audit_log').select('*').order('created_at', { ascending: false }).limit(300)
+  ]);
+  onlineSessions = s || []; auditLog = l || [];
+
+  document.getElementById('online-count').textContent = `— ${onlineSessions.length} activo${onlineSessions.length!==1?'s':''}`;
+  document.getElementById('online-tbody').innerHTML = !onlineSessions.length
+    ? '<tr><td colspan="3" style="text-align:center;padding:1rem;color:var(--hint)">Nadie en línea</td></tr>'
+    : onlineSessions.map(s => {
+      const mins = Math.round((Date.now()-new Date(s.last_seen))/60000);
+      return `<tr><td><span style="display:inline-flex;align-items:center;gap:7px"><span class="online-dot"></span>${s.user_name}${s.user_id===currentUser.id?' <span style="font-size:10px;color:var(--hint)">(tú)</span>':''}</span></td>
+        <td><span class="badge badge-${s.role==='admin'?'admin':'viewer'}">${s.role==='admin'?'Admin':'Lector'}</span></td>
+        <td style="font-size:12px;color:var(--muted)">${mins===0?'Ahora mismo':'Hace '+mins+' min'}</td></tr>`;
+    }).join('');
+  renderLog();
+}
+
+function renderLog() {
+  const filterAction = document.getElementById('log-filter-action')?.value || '';
+  const search = (document.getElementById('log-search')?.value || '').toLowerCase();
+  let rows = [...auditLog];
+  if (filterAction) rows = rows.filter(l => l.action.startsWith(filterAction));
+  if (search) rows = rows.filter(l => (l.user_name+l.user_email).toLowerCase().includes(search));
+  const tbody = document.getElementById('log-tbody');
+  const empty = document.getElementById('log-empty');
+  if (!rows.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  const colors = { LOGIN:'#22c55e',LOGOUT:'#94a3b8',FUNC:'#8b5cf6',LIC:'#3b82f6',USUARIO:'#f59e0b',PASSWD:'#ef4444',STOCK:'#10b981' };
+  tbody.innerHTML = rows.map(l => {
+    const dt = new Date(l.created_at);
+    const fecha = dt.toLocaleDateString('es-CL')+' '+dt.toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
+    const color = colors[l.action.split('_')[0]] || '#94a3b8';
+    const detail = l.details?.msg || JSON.stringify(l.details||{}).replace(/[{}"]/g,'');
+    return `<tr>
+      <td style="font-size:11px;color:var(--muted);white-space:nowrap">${fecha}</td>
+      <td style="font-size:12px">${l.user_name||l.user_email}</td>
+      <td><span style="background:${color}22;color:${color};padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600">${l.action}</span></td>
+      <td style="font-size:12px;color:var(--muted);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${detail}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════
+// MODALS
+// ════════════════════════════════════════════
+function openModal(mode, meta) {
+  modalMode = meta ? mode + ':' + meta : mode;
+  document.getElementById('modal-err').style.display = 'none';
+  document.getElementById('modal-save-btn').style.display = 'inline-flex';
+  const titleEl = document.getElementById('modal-title');
+  const bodyEl  = document.getElementById('modal-body');
+
+  if (mode === 'func') {
+    titleEl.textContent = 'Agregar funcionario';
+    bodyEl.innerHTML = `
+      <div class="form-row"><label>Nombre completo</label><input id="f-nombre" placeholder="Ej: Juan Pérez González"></div>
+      <div class="form-row"><label>RUT</label><input id="f-rut" placeholder="12.345.678-9"></div>
+      <div class="form-row"><label>Correo</label><input id="f-correo" type="email" placeholder="usuario@maipu.cl"></div>
+      <div class="form-row"><label>Cargo</label><input id="f-cargo" placeholder="Ej: Analista, Administrativo..."></div>
+      <div class="form-row"><label>Dirección</label>
+        <select id="f-dir-id"><option value="">Seleccionar...</option>${direcciones.map(d=>`<option value="${d.id}">${d.nombre}</option>`).join('')}</select>
+      </div>`;
+  } else if (mode === 'edit-func') {
+    const f = funcionarios.find(x => x.id === meta);
+    titleEl.textContent = 'Editar funcionario';
+    bodyEl.innerHTML = `
+      <div class="form-row"><label>Nombre completo</label><input id="f-nombre" value="${f?.nombre_completo||''}"></div>
+      <div class="form-row"><label>RUT</label><input id="f-rut" value="${f?.rut||''}"></div>
+      <div class="form-row"><label>Correo</label><input id="f-correo" type="email" value="${f?.correo||''}"></div>
+      <div class="form-row"><label>Cargo</label><input id="f-cargo" value="${f?.cargo||''}"></div>
+      <div class="form-row"><label>Dirección</label>
+        <select id="f-dir-id"><option value="">Seleccionar...</option>${direcciones.map(d=>`<option value="${d.id}" ${d.id===f?.direccion_id?'selected':''}>${d.nombre}</option>`).join('')}</select>
+      </div>
+      <div class="form-row"><label>Estado</label>
+        <select id="f-estado"><option value="activo" ${f?.estado==='activo'?'selected':''}>Activo</option><option value="inactivo" ${f?.estado==='inactivo'?'selected':''}>Inactivo</option></select>
+      </div>`;
+  } else if (mode === 'asignar-lic' || mode === 'aprobar') {
+    const f = funcionarios.find(x => x.id === meta);
+    const yaAsignadas = licencias.filter(l => l.funcionario_id === meta).map(l => l.software_id);
+    const disponibles = softwareList.filter(s => !yaAsignadas.includes(s.id) && s.disponibles > 0);
+    titleEl.textContent = mode === 'aprobar' ? `Aprobar: ${f?.nombre_completo}` : `Asignar licencia: ${f?.nombre_completo}`;
+    bodyEl.innerHTML = `
+      ${mode === 'aprobar' ? `<p style="font-size:13px;color:var(--muted);margin-bottom:1rem">Selecciona las licencias a asignar a este funcionario. Al guardar su estado cambiará a <strong>activo</strong>.</p>` : ''}
+      <div class="form-row"><label>Software</label>
+        <select id="f-sw-id"><option value="">Seleccionar software...</option>${disponibles.map(s=>`<option value="${s.id}">${s.nombre} (${s.disponibles} disp.)</option>`).join('')}</select>
+        ${!disponibles.length ? '<div class="form-hint" style="color:var(--danger)">No hay software disponible con stock.</div>' : ''}
+      </div>
+      <div class="form-row"><label>Observación (opcional)</label><textarea id="f-obs" placeholder="Notas adicionales..."></textarea></div>`;
+  } else if (mode === 'software') {
+    titleEl.textContent = 'Agregar software al catálogo';
+    bodyEl.innerHTML = `
+      <div class="form-row"><label>Nombre</label><input id="f-sw-nombre" placeholder="Ej: Adobe Acrobat DC"></div>
+      <div class="form-row"><label>Tipo</label>
+        <select id="f-sw-tipo"><option value="office">Office 365</option><option value="adobe">Adobe</option><option value="antivirus">Antivirus</option><option value="otro">Otro</option></select>
+      </div>
+      <div class="form-row"><label>Stock total</label><input type="number" id="f-sw-stock" min="0" value="0"></div>`;
+  } else if (mode === 'add-stock') {
+    const sw = softwareList.find(s => s.id === meta);
+    titleEl.textContent = `Agregar stock — ${sw?.nombre}`;
+    bodyEl.innerHTML = `
+      <p style="font-size:13px;color:var(--muted);margin-bottom:1rem">Stock actual: <strong>${sw?.stock_total}</strong> | Asignadas: <strong>${sw?.asignadas}</strong></p>
+      <div class="form-row"><label>Cantidad a agregar</label><input type="number" id="f-stock-cant" min="1" value="0"></div>`;
+  } else if (mode === 'dir') {
+    titleEl.textContent = 'Nueva dirección';
+    bodyEl.innerHTML = `
+      <div class="form-row"><label>Nombre</label><input id="f-dir-nombre" placeholder="Ej: Dirección de Obras Municipales"></div>
+      <div class="form-row"><label>Código corto</label><input id="f-dir-codigo" placeholder="Ej: DOM"></div>
+      <div class="form-row"><label>OU del AD (opcional)</label><input id="f-dir-ou" placeholder="OU=DOM,DC=maipu,DC=cl"><div class="form-hint">Necesario para sincronización automática.</div></div>`;
+  } else if (mode === 'edit-dir') {
+    const d = direcciones.find(x => x.id === meta);
+    titleEl.textContent = 'Editar dirección';
+    bodyEl.innerHTML = `
+      <div class="form-row"><label>Nombre</label><input id="f-dir-nombre" value="${d?.nombre||''}"></div>
+      <div class="form-row"><label>Código</label><input id="f-dir-codigo" value="${d?.codigo||''}"></div>
+      <div class="form-row"><label>OU del AD</label><input id="f-dir-ou" value="${d?.ou_dn||''}"></div>
+      <div class="form-row"><label>Pool de licencias</label>
+        <select id="f-dir-pool">
+          <option value="">Sin pool</option>
+          ${pools.map(p=>`<option value="${p.id}" ${p.id===d?.pool_id?'selected':''}>${p.nombre}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-row"><label>Estado</label><select id="f-dir-activa"><option value="true" ${d?.activa?'selected':''}>Activa</option><option value="false" ${!d?.activa?'selected':''}>Inactiva</option></select></div>`;
+  } else if (mode === 'user') {
+    titleEl.textContent = 'Crear usuario del sistema';
+    bodyEl.innerHTML = `
+      <div class="form-row"><label>Nombre completo</label><input id="f-fname" placeholder="Ej: Juan Pérez"></div>
+      <div class="form-row"><label>Correo</label><input id="f-femail" type="email" placeholder="usuario@maipu.cl"><div class="form-hint">Solo @maipu.cl</div></div>
+      <div class="form-row"><label>Contraseña temporal</label><input id="f-fpass" type="password" placeholder="Mínimo 8 caracteres"></div>
+      <div class="form-row"><label>Rol</label><select id="f-frole"><option value="viewer">Solo lectura</option><option value="admin">Administrador</option></select></div>`;
+  } else if (mode === 'pool-add-sw') {
+    const pool = pools.find(p => p.id === meta);
+    const yaEnPool = poolStock.filter(ps => ps.id === meta).map(ps => ps.software_id);
+    const disponibles = softwareList.filter(s => !yaEnPool.includes(s.id));
+    titleEl.textContent = `Agregar software al pool — ${pool?.nombre}`;
+    bodyEl.innerHTML = `
+      <div class="form-row"><label>Software</label>
+        <select id="f-pool-sw"><option value="">Seleccionar...</option>${disponibles.map(s=>`<option value="${s.id}">${s.nombre}</option>`).join('')}</select>
+      </div>
+      <div class="form-row"><label>Stock asignado a este pool</label>
+        <input type="number" id="f-pool-stock" min="0" value="0">
+        <div class="form-hint">Cuántas licencias de este software le corresponden a ${pool?.nombre}.</div>
+      </div>`;
+  } else if (mode === 'pool-stock') {
+    const [poolId, swId] = meta.split(':');
+    const pool = pools.find(p => p.id === poolId);
+    const sw = softwareList.find(s => s.id === swId);
+    const ps = poolStock.find(x => x.id === poolId && x.software_id === swId);
+    titleEl.textContent = `Agregar stock — ${pool?.nombre} / ${sw?.nombre}`;
+    bodyEl.innerHTML = `
+      <p style="font-size:13px;color:var(--muted);margin-bottom:1rem">Stock actual del pool: <strong>${ps?.stock_total||0}</strong> | Asignadas: <strong>${ps?.asignadas||0}</strong></p>
+      <div class="form-row"><label>Cantidad a agregar</label>
+        <input type="number" id="f-ps-cant" min="1" value="0">
+      </div>`;
+  } else if (mode === 'pool-asignar-dir') {
+    const pool = pools.find(p => p.id === meta);
+    const sinPool = direcciones.filter(d => !d.pool_id);
+    titleEl.textContent = `Asignar dirección al pool — ${pool?.nombre}`;
+    bodyEl.innerHTML = `
+      <div class="form-row"><label>Dirección</label>
+        <select id="f-pool-dir"><option value="">Seleccionar...</option>${sinPool.map(d=>`<option value="${d.id}">${d.nombre}</option>`).join('')}</select>
+        <div class="form-hint">Solo se muestran direcciones sin pool asignado.</div>
+      </div>`;
+  } else if (mode === 'passwd') {
+    titleEl.textContent = 'Cambiar contraseña';
+    bodyEl.innerHTML = `
+      <div class="form-row"><label>Contraseña actual</label><input type="password" id="f-pw-curr" placeholder="Tu contraseña actual"></div>
+      <div class="form-row"><label>Nueva contraseña</label><input type="password" id="f-pw-next" placeholder="Mínimo 8 caracteres"></div>
+      <div class="form-row"><label>Confirmar nueva contraseña</label><input type="password" id="f-pw-conf" placeholder="Repite la nueva contraseña"></div>`;
+  }
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  document.getElementById('modal-save-btn').style.display = 'inline-flex';
+}
+
+function setModalErr(msg) { const el = document.getElementById('modal-err'); el.textContent = msg; el.style.display = 'block'; }
+
+async function modalSave() {
+  document.getElementById('modal-err').style.display = 'none';
+  const btn = document.getElementById('modal-save-btn');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  try {
+    const [mode, meta] = modalMode.split(':');
+    if (mode === 'func')            await saveFuncionario(null);
+    else if (mode === 'edit-func')  await saveFuncionario(meta);
+    else if (mode === 'asignar-lic') await saveAsignarLic(meta, false);
+    else if (mode === 'aprobar')    await saveAsignarLic(meta, true);
+    else if (mode === 'software')   await saveSoftware();
+    else if (mode === 'add-stock')  await saveStock(meta);
+    else if (mode === 'pool-add-sw') await savePoolSoftware(meta);
+    else if (mode === 'pool-stock') await savePoolStock(meta);
+    else if (mode === 'pool-asignar-dir') await savePoolDir(meta);
+    else if (mode === 'dir')        await saveDir(null);
+    else if (mode === 'edit-dir')   await saveDir(meta);
+    else if (mode === 'user')       await saveUser();
+    else if (mode === 'passwd')     await savePasswd();
+  } finally { btn.disabled = false; btn.textContent = 'Guardar'; }
+}
+
+// ════════════════════════════════════════════
+// SAVE ACTIONS
+// ════════════════════════════════════════════
+async function saveFuncionario(id) {
+  const nombre = document.getElementById('f-nombre').value.trim();
+  const rut    = document.getElementById('f-rut').value.trim();
+  const correo = document.getElementById('f-correo').value.trim().toLowerCase();
+  const cargo  = document.getElementById('f-cargo').value.trim();
+  const dirId  = document.getElementById('f-dir-id').value;
+  const estado = document.getElementById('f-estado')?.value || 'activo';
+  if (!nombre) { setModalErr('Ingresa el nombre completo.'); return; }
+
+  const payload = { nombre_completo: nombre, rut: rut||null, correo: correo||null, cargo: cargo||null, direccion_id: dirId||null, estado };
+
+  if (id) {
+    const { error } = await sb.from('funcionarios').update(payload).eq('id', id);
+    if (error) { setModalErr('Error: ' + error.message); return; }
+    await logAudit('FUNC_EDITAR', 'funcionarios', id, `Editado: ${nombre}`);
+  } else {
+    const { error } = await sb.from('funcionarios').insert(payload);
+    if (error) { setModalErr('Error: ' + error.message); return; }
+    await logAudit('FUNC_CREAR', 'funcionarios', null, `Nuevo: ${nombre}`);
+  }
+  await reloadFuncionarios();
+  closeModal(); toast(id ? 'Funcionario actualizado.' : 'Funcionario agregado.');
+  renderFuncionarios(); renderDashboard(); checkPending();
+}
+
+async function saveAsignarLic(funcId, aprobar) {
+  const swId = document.getElementById('f-sw-id').value;
+  const obs  = document.getElementById('f-obs')?.value.trim() || null;
+  if (!swId) { setModalErr('Selecciona un software.'); return; }
+
+  const { error } = await sb.from('licencias').insert({ funcionario_id: funcId, software_id: swId, observacion: obs, asignado_por: currentUser.id });
+  if (error) { setModalErr('Error: ' + error.message); return; }
+
+  if (aprobar) {
+    await sb.from('funcionarios').update({ estado: 'activo' }).eq('id', funcId);
+  }
+
+  const f = funcionarios.find(x => x.id === funcId);
+  const sw = softwareList.find(x => x.id === swId);
+  await logAudit('LIC_ASIGNAR', 'licencias', funcId, `${sw?.nombre} → ${f?.nombre_completo}`);
+
+  await reloadAll();
+  closeModal(); toast('Licencia asignada.');
+  renderFuncionarios(); renderLicencias(); renderDashboard(); checkPending();
+}
+
+async function revocarLicencia(licId) {
+  if (!confirm('¿Revocar esta licencia?')) return;
+  const { error } = await sb.from('licencias').update({ activa: false }).eq('id', licId);
+  if (error) { toast('Error al revocar.', true); return; }
+  await logAudit('LIC_REVOCAR', 'licencias', licId, 'Licencia revocada');
+  await reloadAll();
+  closeModal(); toast('Licencia revocada.');
+  renderFuncionarios(); renderLicencias(); renderDashboard();
+}
+
+async function saveSoftware() {
+  const nombre = document.getElementById('f-sw-nombre').value.trim();
+  const tipo   = document.getElementById('f-sw-tipo').value;
+  const stock  = parseInt(document.getElementById('f-sw-stock').value) || 0;
+  if (!nombre) { setModalErr('Ingresa el nombre del software.'); return; }
+  const { error } = await sb.from('software').insert({ nombre, tipo, stock_total: stock });
+  if (error) { setModalErr('Error: ' + error.message); return; }
+  await logAudit('STOCK_NUEVO', 'software', null, `Nuevo software: ${nombre}`);
+  await reloadAll();
+  closeModal(); toast('Software agregado al catálogo.');
+  renderLicencias();
+}
+
+async function saveStock(swId) {
+  const cant = parseInt(document.getElementById('f-stock-cant').value) || 0;
+  if (cant < 1) { setModalErr('Ingresa una cantidad mayor a 0.'); return; }
+  const sw = softwareList.find(s => s.id === swId);
+  const { error } = await sb.from('software').update({ stock_total: sw.stock_total + cant }).eq('id', swId);
+  if (error) { setModalErr('Error: ' + error.message); return; }
+  await logAudit('STOCK_AGREGAR', 'software', swId, `+${cant} → ${sw.nombre}`);
+  await reloadAll();
+  closeModal(); toast(`+${cant} licencias agregadas.`);
+  renderLicencias(); renderDashboard();
+}
+
+async function saveDir(id) {
+  const nombre = document.getElementById('f-dir-nombre').value.trim();
+  const codigo = document.getElementById('f-dir-codigo').value.trim();
+  const ou     = document.getElementById('f-dir-ou').value.trim();
+  const activa = document.getElementById('f-dir-activa')?.value !== 'false';
+  const poolId = document.getElementById('f-dir-pool')?.value || null;
+  if (!nombre) { setModalErr('Ingresa el nombre de la dirección.'); return; }
+  const payload = { nombre, codigo: codigo||null, ou_dn: ou||null, activa, pool_id: poolId||null };
+  if (id) {
+    const { error } = await sb.from('direcciones').update(payload).eq('id', id);
+    if (error) { setModalErr('Error: ' + error.message); return; }
+  } else {
+    const { error } = await sb.from('direcciones').insert(payload);
+    if (error) { setModalErr('Error: ' + error.message); return; }
+  }
+  await reloadDirecciones(); await reloadPools();
+  closeModal(); toast(id ? 'Dirección actualizada.' : 'Dirección creada.');
+  renderDirecciones(); populateDirFilters(); renderPools();
+}
+
+async function saveUser() {
+  const name  = document.getElementById('f-fname').value.trim();
+  const email = document.getElementById('f-femail').value.trim().toLowerCase();
+  const pass  = document.getElementById('f-fpass').value;
+  const role  = document.getElementById('f-frole').value;
+  if (!name)  { setModalErr('Ingresa el nombre.'); return; }
+  if (!email.endsWith('@' + ALLOWED_DOMAIN)) { setModalErr('Solo correos @' + ALLOWED_DOMAIN); return; }
+  if (pass.length < 8) { setModalErr('Mínimo 8 caracteres.'); return; }
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json', 'apikey':SUPABASE_SRV, 'Authorization':'Bearer '+SUPABASE_SRV },
+    body: JSON.stringify({ email, password: pass, email_confirm: true, user_metadata: { full_name: name, role } })
+  });
+  const newUser = await res.json();
+  if (!res.ok) { setModalErr('Error: ' + (newUser.message || 'No se pudo crear')); return; }
+  const sbAdmin = createClient(SUPABASE_URL, SUPABASE_SRV);
+  await sbAdmin.from('profiles').update({ role, full_name: name, active: true }).eq('id', newUser.id);
+  await logAudit('USUARIO_CREAR', 'profiles', newUser.id, `${name} (${email}) rol: ${role}`);
+  const { data: u } = await sb.from('profiles').select('*').order('full_name');
+  sysUsers = u || [];
+  closeModal(); toast('Usuario creado.'); renderUsuarios();
+}
+
+async function savePasswd() {
+  const curr = document.getElementById('f-pw-curr')?.value || '';
+  const next = document.getElementById('f-pw-next')?.value || '';
+  const conf = document.getElementById('f-pw-conf')?.value || '';
+  if (!curr) { setModalErr('Ingresa tu contraseña actual.'); return; }
+  if (next.length < 8) { setModalErr('Mínimo 8 caracteres.'); return; }
+  if (next !== conf) { setModalErr('Las contraseñas no coinciden.'); return; }
+  const { error: signInErr } = await sb.auth.signInWithPassword({ email: currentProfile.email, password: curr });
+  if (signInErr) { setModalErr('La contraseña actual es incorrecta.'); return; }
+  const { error } = await sb.auth.updateUser({ password: next });
+  if (error) { setModalErr('Error: ' + error.message); return; }
+  await logAudit('PASSWD', 'profile', currentUser.id, 'Contraseña actualizada');
+  closeModal(); toast('Contraseña actualizada.');
+}
+
+async function toggleUserActive(id, current) {
+  const { error } = await sb.from('profiles').update({ active: !current }).eq('id', id);
+  if (error) { toast('Error.', true); return; }
+  const u = sysUsers.find(x => x.id === id);
+  await logAudit('USUARIO_ESTADO', 'profiles', id, `${u?.email} → ${!current?'activado':'desactivado'}`);
+  const { data } = await sb.from('profiles').select('*').order('full_name');
+  sysUsers = data || [];
+  renderUsuarios(); toast('Estado actualizado.');
+}
+
+// ════════════════════════════════════════════
+// POOLS DE LICENCIAS
+// ════════════════════════════════════════════
+function renderPools() {
+  const container = document.getElementById('pools-container');
+  if (!pools.length) {
+    container.innerHTML = '<div class="empty"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/></svg>Sin pools configurados</div>';
+    return;
+  }
+  container.innerHTML = pools.map(pool => {
+    const poolSw = poolStock.filter(ps => ps.id === pool.id);
+    // Agrupar por software
+    const swRows = softwareList.map(sw => {
+      const ps = poolStock.find(x => x.id === pool.id && x.software_id === sw.id);
+      if (!ps || ps.stock_total === 0) return null;
+      const p = ps.stock_total > 0 ? Math.round(ps.asignadas / ps.stock_total * 100) : 0;
+      const barC = p >= 90 ? '#c0392b' : p >= 70 ? '#d97706' : '#1a5c3a';
+      return `<tr>
+        <td><span class="badge badge-${sw.tipo}">${sw.nombre}</span></td>
+        <td>${ps.stock_total}</td>
+        <td>${ps.asignadas}</td>
+        <td><strong style="color:${ps.disponibles<=0?'var(--danger)':'var(--accent)'}">${ps.disponibles}</strong></td>
+        <td><div class="prog"><div class="prog-bg"><div class="prog-fill" style="width:${p}%;background:${barC}"></div></div><span class="prog-lbl">${p}%</span></div></td>
+        <td><button class="btn btn-sm" onclick="openModal('pool-stock','${pool.id}:${sw.id}')">+ Stock</button></td>
+      </tr>`;
+    }).filter(Boolean).join('');
+
+    // Direcciones del pool
+    const dirs = direcciones.filter(d => d.pool_id === pool.id);
+    const dirRows = dirs.map(d => {
+      const cnt = licencias.filter(l => l.funcionarios?.direccion_id === d.id).length;
+      const funcCnt = funcionarios.filter(f => f.direccion_id === d.id).length;
+      return `<tr>
+        <td style="padding-left:1.5rem">↳ ${d.nombre}</td>
+        <td style="font-size:12px;color:var(--muted)">${funcCnt} funcionarios</td>
+        <td colspan="3" style="font-size:12px;color:var(--muted)">${cnt} licencias activas</td>
+        <td></td>
+      </tr>`;
+    }).join('');
+
+    return `<div class="card" style="margin-bottom:1rem">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem">
+        <span style="width:12px;height:12px;border-radius:50%;background:${pool.color};flex-shrink:0"></span>
+        <span style="font-size:15px;font-weight:600">${pool.nombre}</span>
+        <button class="btn btn-sm" style="margin-left:auto" onclick="openModal('pool-add-sw','${pool.id}')">
+          <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Agregar software
+        </button>
+        <button class="btn btn-sm" onclick="openModal('pool-asignar-dir','${pool.id}')">Asignar dirección</button>
+      </div>
+      ${swRows ? `<div class="table-wrap"><table>
+        <thead><tr><th>Software</th><th>Stock pool</th><th>Asignadas</th><th>Disponibles</th><th>Uso</th><th></th></tr></thead>
+        <tbody>${swRows}${dirRows}</tbody>
+      </table></div>` : '<p style="font-size:13px;color:var(--hint);padding:.5rem 0">Sin software asignado a este pool. Usa "Agregar software" para definir el stock.</p>'}
+    </div>`;
+  }).join('');
+}
+
+async function savePoolSoftware(poolId) {
+  const swId = document.getElementById('f-pool-sw').value;
+  const stock = parseInt(document.getElementById('f-pool-stock').value) || 0;
+  if (!swId) { setModalErr('Selecciona un software.'); return; }
+  const { error } = await sb.from('pool_stock').upsert({ pool_id: poolId, software_id: swId, stock_total: stock }, { onConflict: 'pool_id,software_id' });
+  if (error) { setModalErr('Error: ' + error.message); return; }
+  const pool = pools.find(p => p.id === poolId);
+  const sw = softwareList.find(s => s.id === swId);
+  await logAudit('STOCK_POOL', 'pool_stock', poolId, `${sw?.nombre} → pool ${pool?.nombre}: ${stock} licencias`);
+  await reloadPools();
+  closeModal(); toast('Software agregado al pool.');
+  renderPools();
+}
+
+async function savePoolStock(meta) {
+  const [poolId, swId] = meta.split(':');
+  const cant = parseInt(document.getElementById('f-ps-cant').value) || 0;
+  if (cant < 1) { setModalErr('Ingresa una cantidad mayor a 0.'); return; }
+  const ps = poolStock.find(x => x.id === poolId && x.software_id === swId);
+  const newTotal = (ps?.stock_total || 0) + cant;
+  const { error } = await sb.from('pool_stock').upsert({ pool_id: poolId, software_id: swId, stock_total: newTotal }, { onConflict: 'pool_id,software_id' });
+  if (error) { setModalErr('Error: ' + error.message); return; }
+  const pool = pools.find(p => p.id === poolId);
+  const sw = softwareList.find(s => s.id === swId);
+  await logAudit('STOCK_AGREGAR', 'pool_stock', poolId, `+${cant} ${sw?.nombre} → pool ${pool?.nombre}`);
+  await reloadPools();
+  closeModal(); toast(`+${cant} licencias agregadas al pool.`);
+  renderPools(); renderDashboard();
+}
+
+async function savePoolDir(poolId) {
+  const dirId = document.getElementById('f-pool-dir').value;
+  if (!dirId) { setModalErr('Selecciona una dirección.'); return; }
+  const { error } = await sb.from('direcciones').update({ pool_id: poolId }).eq('id', dirId);
+  if (error) { setModalErr('Error: ' + error.message); return; }
+  const pool = pools.find(p => p.id === poolId);
+  const dir = direcciones.find(d => d.id === dirId);
+  await logAudit('POOL_DIR', 'direcciones', dirId, `${dir?.nombre} → pool ${pool?.nombre}`);
+  await reloadDirecciones();
+  await reloadPools();
+  closeModal(); toast('Dirección asignada al pool.');
+  renderPools(); renderDirecciones();
+}
+
+// ════════════════════════════════════════════
+// RELOAD
+// ════════════════════════════════════════════
+async function reloadPools() {
+  const [{ data: p }, { data: ps }] = await Promise.all([
+    sb.from('pools').select('*').order('nombre'),
+    sb.from('resumen_pools').select('*'),
+  ]);
+  pools = p || []; poolStock = ps || [];
+}
+async function reloadFuncionarios() {
+  const { data } = await sb.from('funcionarios').select('*').order('nombre_completo');
+  funcionarios = data || [];
+}
+async function reloadDirecciones() {
+  const { data } = await sb.from('direcciones').select('*').order('nombre');
+  direcciones = data || [];
+}
+async function reloadAll() {
+  const [{ data: f }, { data: sw }, { data: l }, { data: p }, { data: ps }] = await Promise.all([
+    sb.from('funcionarios').select('*').order('nombre_completo'),
+    sb.from('resumen_software').select('*'),
+    sb.from('licencias').select('*,software(nombre,tipo),funcionarios(nombre_completo,direccion_id)').eq('activa', true),
+    sb.from('pools').select('*').order('nombre'),
+    sb.from('resumen_pools').select('*'),
+  ]);
+  funcionarios = f || []; softwareList = sw || []; licencias = l || [];
+  pools = p || []; poolStock = ps || [];
+}
+
+// ════════════════════════════════════════════
+// HEARTBEAT & AUDIT
+// ════════════════════════════════════════════
+function startHeartbeat() {
+  updatePresence();
+  heartbeatInterval = setInterval(updatePresence, 30000);
+  if (currentProfile.role === 'admin') {
+    onlineInterval = setInterval(() => {
+      if (document.getElementById('page-actividad')?.classList.contains('active')) renderActividad();
+    }, 30000);
+  }
+}
+
+async function updatePresence() {
+  if (!currentUser) return;
+  await sb.from('user_sessions').upsert({ user_id: currentUser.id, user_email: currentProfile.email, user_name: currentProfile.full_name || currentProfile.email.split('@')[0], role: currentProfile.role, last_seen: new Date().toISOString() }, { onConflict: 'user_id' });
+}
+
+async function logAudit(action, entity, entityId, details) {
+  if (!currentUser) return;
+  await sb.from('audit_log').insert({ user_id: currentUser.id, user_email: currentProfile?.email||'', user_name: currentProfile?.full_name||currentProfile?.email?.split('@')[0]||'', action, entity, entity_id: entityId||null, details: typeof details === 'string' ? { msg: details } : details });
+}
+
+// TOAST
+let toastTimer;
+function toast(msg, isErr) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'show' + (isErr ? ' err' : '');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.className = '', 3000);
+}
+
+boot();
+</script>
+</body>
+</html>
